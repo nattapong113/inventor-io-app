@@ -1,139 +1,139 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput, TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
 
-const MOCK_PRODUCTS = [
-  {
-    id: '1',
-    name: 'LG UltraGear 27" 165Hz',
-    stock: 24,
-    category: 'Gaming Monitors',
-    location: 'Bangkok, TH',
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=200&h=200&fit=crop',
-  },
-  {
-    id: '2',
-    name: 'Dell UltraSharp 27" 4K',
-    stock: 8,
-    category: 'Office Monitors',
-    location: 'Chon Buri, TH',
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1586952518485-11b180e92764?w=200&h=200&fit=crop',
-  },
-  {
-    id: '3',
-    name: 'Samsung Odyssey G9 49"',
-    stock: 0,
-    category: 'Curved Monitors',
-    location: 'Warehouse',
-    status: 'Sold out',
-    image: 'https://images.unsplash.com/photo-1616763355548-1b606f439fce?w=200&h=200&fit=crop',
-  },
-  {
-    id: '4',
-    name: 'BenQ ZOWIE 24" 144Hz',
-    stock: 15,
-    category: 'Esports Monitors',
-    location: 'Chiang Mai, TH',
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1551645120-d70bfe84c826?w=200&h=200&fit=crop',
-  },
-];
-
 export default function ProductsScreen() {
   const router = useRouter();
+  
+  // สร้าง State สำหรับเก็บข้อมูลที่ดึงมา และสถานะการโหลด
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // ฟังก์ชันสำหรับดึงข้อมูล JSON
+  const fetchProducts = async () => {
+    try {
+      const url = 'https://raw.githubusercontent.com/nattapong113/inventor-io-app/refs/heads/main/products.json';
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      // ถ้าดึงไม่สำเร็จ หรือลิงก์ยังไม่พร้อม จะโชว์ข้อมูลสำรองไปก่อน
+      alert('ยังไม่ได้ใส่ลิงก์ GitHub หรือดึงข้อมูลล้มเหลวครับ');
+    } finally {
+      setIsLoading(false); // ปิดตัวหมุนโหลดเมื่อทำงานเสร็จ (ไม่ว่าจะสำเร็จหรือพัง)
+    }
+  };
+
+  // สั่งให้ดึงข้อมูลทันทีที่เปิดหน้านี้ขึ้นมา
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+
+      {/* Modern Header */}
       <View style={styles.header}>
-        {/* เปลี่ยนคำสั่งตรงนี้เพื่อให้กลับไปหน้า Home แทนการใช้ back() */}
-        <TouchableOpacity onPress={() => router.replace('/home')}>
-          <Ionicons name="arrow-back" size={26} color="#1E3A8A" />
+        <TouchableOpacity onPress={() => router.replace('/home')} style={styles.iconButton}>
+          <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Products</Text>
-        <TouchableOpacity>
-          <Ionicons name="person-circle-outline" size={30} color="#8B5CF6" />
+        <Text style={styles.headerTitle}>All Products</Text>
+        <TouchableOpacity style={styles.profileAvatar}>
+          <Text style={styles.profileInitials}>JD</Text>
         </TouchableOpacity>
       </View>
 
       {/* Action Bar: Search & Add */}
       <View style={styles.actionBar}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#9CA3AF" />
+          <Ionicons name="search" size={20} color="#94A3B8" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search products..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#94A3B8"
           />
         </View>
         
         <Link href="/add" asChild>
           <TouchableOpacity style={styles.addButton}>
             <Ionicons name="add" size={20} color="#FFF" />
-            <Text style={styles.addButtonText}>Add Product</Text>
+            <Text style={styles.addButtonText}>Add</Text>
           </TouchableOpacity>
         </Link>
-
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="funnel-outline" size={20} color="#8B5CF6" />
-        </TouchableOpacity>
       </View>
 
       {/* Product List */}
       <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
-        {MOCK_PRODUCTS.map((product) => (
-          <TouchableOpacity key={product.id} style={styles.productCard}>
-            <Image source={{ uri: product.image }} style={styles.productImage} />
-            
-            <View style={styles.productInfo}>
-              <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+        
+        {/* แสดงตัวหมุนโหลดข้อมูลระหว่างที่กำลังดึงข้อมูลจากอินเทอร์เน็ต */}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#2563EB" />
+            <Text style={styles.loadingText}>Loading products from GitHub...</Text>
+          </View>
+        ) : (
+          /* ดึงข้อมูลจาก State มาแสดงผล */
+          products.map((product) => (
+            <TouchableOpacity key={product.id} style={styles.productCard}>
+              {/* ใช้คีย์ image_url ตาม JSON */}
+              <Image source={{ uri: product.image_url }} style={styles.productImage} />
               
-              <View style={styles.detailRow}>
-                <Ionicons name="cube-outline" size={14} color="#6B7280" />
-                <Text style={styles.detailText}>Stock: {product.stock} units</Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Ionicons name="pricetag-outline" size={14} color="#6B7280" />
-                <Text style={styles.detailText}>{product.category}</Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Ionicons name="location-outline" size={14} color="#6B7280" />
-                <Text style={styles.detailText}>{product.location}</Text>
-              </View>
+              <View style={styles.productInfo}>
+                <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+                
+                <View style={styles.detailRow}>
+                  <Ionicons name="cube-outline" size={14} color="#64748B" />
+                  {/* ใช้คีย์ stock_text ตาม JSON */}
+                  <Text style={styles.detailText}>{product.stock_text}</Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Ionicons name="pricetag-outline" size={14} color="#64748B" />
+                  <Text style={styles.detailText}>{product.category}</Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Ionicons name="location-outline" size={14} color="#64748B" />
+                  {/* ใช้คีย์ location_text ตาม JSON */}
+                  <Text style={styles.detailText}>{product.location_text}</Text>
+                </View>
 
-              <View style={[
-                styles.statusBadge,
-                product.status === 'Active' ? styles.statusActive : styles.statusSoldOut
-              ]}>
-                <Text style={[
-                  styles.statusText,
-                  product.status === 'Active' ? styles.statusActiveText : styles.statusSoldOutText
+                {/* เปลี่ยนสี Badge ตามสถานะ badge_status */}
+                <View style={[
+                  styles.statusBadge,
+                  product.badge_status === 'Active' ? styles.statusActive : styles.statusLowStock
                 ]}>
-                  {product.status}
-                </Text>
+                  <Text style={[
+                    styles.statusText,
+                    product.badge_status === 'Active' ? styles.statusActiveText : styles.statusLowStockText
+                  ]}>
+                    {product.badge_status}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <TouchableOpacity style={styles.moreButton}>
-              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+              <TouchableOpacity style={styles.moreButton}>
+                <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
-        ))}
-        {/* เว้นระยะด้านล่างเผื่อเมนู */}
+          ))
+        )}
+        
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -144,139 +144,57 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F4F6F8',
-    paddingBottom: 70, 
-  },
+  container: { flex: 1, backgroundColor: '#F8FAFC', paddingBottom: 70 },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#F8FAFC',
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E3A8A',
+  iconButton: {
+    padding: 8, backgroundColor: '#FFFFFF', borderRadius: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
-  actionBar: {
-    flexDirection: 'row',
-    padding: 20,
-    alignItems: 'center',
-    gap: 10,
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  profileAvatar: { 
+    width: 36, height: 36, borderRadius: 18, backgroundColor: '#2563EB', 
+    justifyContent: 'center', alignItems: 'center',
   },
+  profileInitials: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+  
+  actionBar: { flexDirection: 'row', paddingHorizontal: 24, paddingBottom: 16, alignItems: 'center', gap: 12 },
   searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    borderRadius: 16, paddingHorizontal: 16, height: 48,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#1F2937',
-  },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#0F172A', fontWeight: '500' },
   addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 12,
-    height: 40,
-    borderRadius: 8,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#2563EB',
+    paddingHorizontal: 16, height: 48, borderRadius: 16,
+    shadowColor: '#2563EB', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  filterButton: {
-    width: 40,
-    height: 40,
-    backgroundColor: '#F5F3FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  listContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
+  addButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginLeft: 4 },
+  
+  listContainer: { flex: 1, paddingHorizontal: 24 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 },
+  loadingText: { marginTop: 12, color: '#64748B', fontWeight: '600' },
+  
   productCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 16,
+    alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04, shadowRadius: 10, elevation: 3,
   },
-  productImage: {
-    width: 80, 
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-  },
-  productInfo: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: 'center',
-  },
-  productName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  detailText: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginLeft: 6, 
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-    marginTop: 6,
-  },
-  statusActive: {
-    backgroundColor: '#ECFDF5',
-  },
-  statusActiveText: {
-    color: '#10B981',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  statusSoldOut: {
-    backgroundColor: '#FEF2F2',
-  },
-  statusSoldOutText: {
-    color: '#EF4444',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  moreButton: {
-    padding: 8,
-  },
+  productImage: { width: 84, height: 84, borderRadius: 16, backgroundColor: '#F1F5F9' },
+  productInfo: { flex: 1, marginLeft: 16, justifyContent: 'center' },
+  productName: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
+  detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  detailText: { fontSize: 12, color: '#64748B', marginLeft: 6, fontWeight: '500' },
+  
+  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 8 },
+  statusActive: { backgroundColor: '#D1FAE5' },
+  statusActiveText: { color: '#059669', fontSize: 11, fontWeight: '700' },
+  statusLowStock: { backgroundColor: '#FCE7F3' }, // สีชมพูอมม่วงแบบในรูปโจทย์
+  statusLowStockText: { color: '#DB2777', fontSize: 11, fontWeight: '700' },
+  
+  moreButton: { padding: 8 },
 });
