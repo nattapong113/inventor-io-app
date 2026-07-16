@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Modal,
   ScrollView,
@@ -14,34 +15,35 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
 
-// เพิ่มสินค้าเป็น 3 รายการตรงนี้ครับ
-const TRENDING_PRODUCTS = [
-  { 
-    id: '1', 
-    name: 'LG UltraGear 27"', 
-    price: '$299', 
-    stock: 24, 
-    image: 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=200&h=200&fit=crop' 
-  },
-  { 
-    id: '2', 
-    name: 'Dell UltraSharp 4K', 
-    price: '$549', 
-    stock: 8, 
-    image: 'https://images.unsplash.com/photo-1586952518485-11b180e92764?w=200&h=200&fit=crop' 
-  },
-  { 
-    id: '3', 
-    name: 'Samsung Odyssey G9', 
-    price: '$1,299', 
-    stock: 3, 
-    image: 'https://images.unsplash.com/photo-1551645120-d70bfe84c826?w=200&h=200&fit=crop' 
-  }
-];
-
 export default function HomeScreen() {
   const router = useRouter();
   const [isMenuVisible, setMenuVisible] = useState(false);
+
+  // 1. สร้าง State เก็บข้อมูลสินค้าสำหรับหน้า Home
+  const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 2. ฟังก์ชันดึงข้อมูลจาก GitHub
+  const fetchTrendingProducts = async () => {
+    try {
+      const url = 'https://raw.githubusercontent.com/nattapong113/inventor-io-app/refs/heads/main/products.json';
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      // เอาแค่ 3 อันดับแรกมาโชว์ในหน้า Home จะได้ไม่ล้น
+      setTrendingProducts(data.slice(0, 3));
+    } catch (error) {
+      console.error("Error fetching trending products:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 3. สั่งให้ทำงานตอนเปิดหน้า Home
+  useEffect(() => {
+    fetchTrendingProducts();
+  }, []);
 
   const handleNavigation = (path: string) => {
     setMenuVisible(false); 
@@ -137,19 +139,28 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ระบบจะวนลูปแสดงสินค้าทั้ง 3 ชิ้นอัตโนมัติ */}
-        {TRENDING_PRODUCTS.map((product) => (
-          <TouchableOpacity key={product.id} style={styles.productCard} onPress={() => router.push('/products')}>
-            <Image source={{ uri: product.image }} style={styles.productImage} />
-            <View style={styles.productInfo}>
-              <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
-              <View style={styles.badgeContainer}>
-                <Text style={styles.productStock}>{product.stock} in stock</Text>
+        {/* ดึงข้อมูลจาก GitHub มาโชว์ตรงนี้ */}
+        {isLoading ? (
+          <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color="#2563EB" />
+          </View>
+        ) : (
+          trendingProducts.map((product) => (
+            <TouchableOpacity key={product.id} style={styles.productCard} onPress={() => router.push('/products')}>
+              {/* เปลี่ยนจาก product.image เป็น product.image_url ตาม JSON */}
+              <Image source={{ uri: product.image_url }} style={styles.productImage} />
+              <View style={styles.productInfo}>
+                <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+                <View style={styles.badgeContainer}>
+                  {/* เปลี่ยนเป็น product.stock_text */}
+                  <Text style={styles.productStock}>{product.stock_text}</Text>
+                </View>
               </View>
-            </View>
-            <Text style={styles.productPrice}>{product.price}</Text>
-          </TouchableOpacity>
-        ))}
+              {/* ถ้าใน JSON ยังไม่มีราคา ระบบจะแสดง $299 เป็นค่าเริ่มต้นไปก่อน */}
+              <Text style={styles.productPrice}>{product.price || '$299'}</Text>
+            </TouchableOpacity>
+          ))
+        )}
 
         {/* Chart Placeholder */}
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Sales Performance</Text>
