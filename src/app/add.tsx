@@ -2,15 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
@@ -25,6 +27,56 @@ export default function AddProductScreen() {
   const [price, setPrice] = useState('');
   const [itemCode, setItemCode] = useState('');
   const [stock, setStock] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // URL ของ API เซิร์ฟเวอร์มหาลัย
+  const API_BASE_URL = 'http://119.59.102.161:3017/api';
+
+  // ฟังก์ชันสำหรับส่งข้อมูลไปยัง Backend
+  const handleSaveProduct = async () => {
+    // เช็คค่าว่าง
+    if (!name || !category || !price || !stock || !itemCode) {
+      Alert.alert('แจ้งเตือน', 'กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name,
+          stock: parseInt(stock),
+          category: 1, // ค่าจำลอง (ถ้าจะใช้จริงต้องผูกกับ ID หมวดหมู่)
+          location: 'Main Warehouse',
+          image: 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=200&h=200&fit=crop', // รูปภาพเริ่มต้น
+          status: parseInt(stock) > 5 ? 'Active' : 'Low in stock', // คำนวณสถานะจากสต็อก
+          brand: 'Generic', 
+          sizes: description, // นำ Description ไปใส่ช่อง sizes ก่อน
+          productCode: itemCode,
+          orderName: `Order-${itemCode}`
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      Alert.alert('สำเร็จ', 'เพิ่มสินค้าใหม่เรียบร้อยแล้ว!', [
+        { text: 'OK', onPress: () => router.replace('/products') }
+      ]);
+
+    } catch (error: any) {
+      console.error("Error adding product:", error);
+      Alert.alert('เกิดข้อผิดพลาด', `บันทึกข้อมูลล้มเหลว: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -32,7 +84,7 @@ export default function AddProductScreen() {
 
       {/* Modern Header */}
       <View style={styles.header}>
-        {/* แก้ไขปุ่ม Back ให้พุ่งกลับไปหน้า Home แทนเพื่อแก้บัค */}
+        {/* ปุ่ม Back พุ่งกลับไปหน้า Home */}
         <TouchableOpacity onPress={() => router.replace('/home')} style={styles.iconButton}>
           <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
@@ -124,16 +176,20 @@ export default function AddProductScreen() {
             />
           </View>
 
-          {/* Save Button */}
+          {/* Save Button ที่เชื่อมต่อ API */}
           <TouchableOpacity 
-            style={styles.saveButton}
-            onPress={() => {
-              alert('Product saved successfully!');
-              router.replace('/products'); // เซฟเสร็จให้เด้งไปหน้ารายการสินค้า
-            }}
+            style={[styles.saveButton, isSubmitting && { opacity: 0.7 }]}
+            onPress={handleSaveProduct}
+            disabled={isSubmitting}
           >
-            <Ionicons name="save-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.saveButtonText}>Save Product</Text>
+            {isSubmitting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="save-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.saveButtonText}>Save Product</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <View style={{ height: 40 }} />

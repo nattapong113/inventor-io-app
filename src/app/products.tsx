@@ -8,7 +8,8 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput, TouchableOpacity,
+  TextInput,
+  TouchableOpacity,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,18 +22,25 @@ export default function ProductsScreen() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ฟังก์ชันสำหรับดึงข้อมูล JSON
+  // กำหนด URL ของ API เซิร์ฟเวอร์มหาลัย
+  const API_BASE_URL = 'http://119.59.102.161:3017/api';
+
+  // ฟังก์ชันสำหรับดึงข้อมูลจาก Database
   const fetchProducts = async () => {
     try {
-      const url = 'https://raw.githubusercontent.com/nattapong113/inventor-io-app/refs/heads/main/products.json';
+      setIsLoading(true);
       
-      const response = await fetch(url);
+      const response = await fetch(`${API_BASE_URL}/products`);
+      
+      if (!response.ok) {
+         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       setProducts(data);
     } catch (error) {
       console.error("Error fetching products:", error);
-      // ถ้าดึงไม่สำเร็จ หรือลิงก์ยังไม่พร้อม จะโชว์ข้อมูลสำรองไปก่อน
-      alert('ยังไม่ได้ใส่ลิงก์ GitHub หรือดึงข้อมูลล้มเหลวครับ');
+      alert('ดึงข้อมูลจากเซิร์ฟเวอร์ล้มเหลวครับ กรุณาตรวจสอบการเชื่อมต่อ');
     } finally {
       setIsLoading(false); // ปิดตัวหมุนโหลดเมื่อทำงานเสร็จ (ไม่ว่าจะสำเร็จหรือพัง)
     }
@@ -80,26 +88,26 @@ export default function ProductsScreen() {
       {/* Product List */}
       <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
         
-        {/* แสดงตัวหมุนโหลดข้อมูลระหว่างที่กำลังดึงข้อมูลจากอินเทอร์เน็ต */}
+        {/* แสดงตัวหมุนโหลดข้อมูลระหว่างที่กำลังดึงข้อมูลจากเซิร์ฟเวอร์ */}
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#2563EB" />
-            <Text style={styles.loadingText}>Loading products from GitHub...</Text>
+            <Text style={styles.loadingText}>Loading products from Server...</Text>
           </View>
         ) : (
           /* ดึงข้อมูลจาก State มาแสดงผล */
           products.map((product) => (
             <TouchableOpacity key={product.id} style={styles.productCard}>
-              {/* ใช้คีย์ image_url ตาม JSON */}
-              <Image source={{ uri: product.image_url }} style={styles.productImage} />
+              {/* เปลี่ยนเป็น product.image ให้ตรงกับฐานข้อมูล */}
+              <Image source={{ uri: product.image }} style={styles.productImage} />
               
               <View style={styles.productInfo}>
                 <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
                 
                 <View style={styles.detailRow}>
                   <Ionicons name="cube-outline" size={14} color="#64748B" />
-                  {/* ใช้คีย์ stock_text ตาม JSON */}
-                  <Text style={styles.detailText}>{product.stock_text}</Text>
+                  {/* เปลี่ยนเป็น product.stock และพิมพ์ข้อความต่อท้ายเอง */}
+                  <Text style={styles.detailText}>{product.stock} in stock</Text>
                 </View>
                 
                 <View style={styles.detailRow}>
@@ -109,20 +117,20 @@ export default function ProductsScreen() {
                 
                 <View style={styles.detailRow}>
                   <Ionicons name="location-outline" size={14} color="#64748B" />
-                  {/* ใช้คีย์ location_text ตาม JSON */}
-                  <Text style={styles.detailText}>{product.location_text}</Text>
+                  {/* เปลี่ยนเป็น product.location ให้ตรงกับฐานข้อมูล */}
+                  <Text style={styles.detailText}>{product.location}</Text>
                 </View>
 
-                {/* เปลี่ยนสี Badge ตามสถานะ badge_status */}
+                {/* เปลี่ยนเป็น product.status ตามฟิลด์ในฐานข้อมูล */}
                 <View style={[
                   styles.statusBadge,
-                  product.badge_status === 'Active' ? styles.statusActive : styles.statusLowStock
+                  product.status === 'Active' ? styles.statusActive : styles.statusLowStock
                 ]}>
                   <Text style={[
                     styles.statusText,
-                    product.badge_status === 'Active' ? styles.statusActiveText : styles.statusLowStockText
+                    product.status === 'Active' ? styles.statusActiveText : styles.statusLowStockText
                   ]}>
-                    {product.badge_status}
+                    {product.status}
                   </Text>
                 </View>
               </View>
@@ -193,7 +201,7 @@ const styles = StyleSheet.create({
   statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 8 },
   statusActive: { backgroundColor: '#D1FAE5' },
   statusActiveText: { color: '#059669', fontSize: 11, fontWeight: '700' },
-  statusLowStock: { backgroundColor: '#FCE7F3' }, // สีชมพูอมม่วงแบบในรูปโจทย์
+  statusLowStock: { backgroundColor: '#FCE7F3' },
   statusLowStockText: { color: '#DB2777', fontSize: 11, fontWeight: '700' },
   
   moreButton: { padding: 8 },

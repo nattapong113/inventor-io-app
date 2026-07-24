@@ -23,12 +23,21 @@ export default function HomeScreen() {
   const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 2. ฟังก์ชันดึงข้อมูลจาก GitHub
+  // ประกาศตัวแปร URL ของเซิร์ฟเวอร์ (ชี้ไปที่ IP ของมหาวิทยาลัยและพอร์ต 3017)
+  const API_BASE_URL = 'http://119.59.102.161:3017/api';
+
+  // 2. ฟังก์ชันดึงข้อมูลจาก Backend Database
   const fetchTrendingProducts = async () => {
     try {
-      const url = 'https://raw.githubusercontent.com/nattapong113/inventor-io-app/refs/heads/main/products.json';
+      setIsLoading(true);
       
-      const response = await fetch(url);
+      // ดึงข้อมูลจากเซิร์ฟเวอร์มหาลัย
+      const response = await fetch(`${API_BASE_URL}/products`);
+      
+      if (!response.ok) {
+         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       
       // เอาแค่ 3 อันดับแรกมาโชว์ในหน้า Home จะได้ไม่ล้น
@@ -139,7 +148,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ดึงข้อมูลจาก GitHub มาโชว์ตรงนี้ */}
+        {/* ดึงข้อมูลจาก API มหาลัยมาโชว์ตรงนี้ */}
         {isLoading ? (
           <View style={{ paddingVertical: 20, alignItems: 'center' }}>
             <ActivityIndicator size="small" color="#2563EB" />
@@ -147,16 +156,16 @@ export default function HomeScreen() {
         ) : (
           trendingProducts.map((product) => (
             <TouchableOpacity key={product.id} style={styles.productCard} onPress={() => router.push('/products')}>
-              {/* เปลี่ยนจาก product.image เป็น product.image_url ตาม JSON */}
-              <Image source={{ uri: product.image_url }} style={styles.productImage} />
+              {/* แก้ชื่อฟิลด์เป็น product.image ตามโครงสร้างตารางฐานข้อมูล */}
+              <Image source={{ uri: product.image }} style={styles.productImage} />
               <View style={styles.productInfo}>
                 <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
                 <View style={styles.badgeContainer}>
-                  {/* เปลี่ยนเป็น product.stock_text */}
-                  <Text style={styles.productStock}>{product.stock_text}</Text>
+                  {/* นำค่าตัวเลขจาก product.stock มาต่อข้อความเอง */}
+                  <Text style={styles.productStock}>{product.stock} in stock</Text>
                 </View>
               </View>
-              {/* ถ้าใน JSON ยังไม่มีราคา ระบบจะแสดง $299 เป็นค่าเริ่มต้นไปก่อน */}
+              {/* ถ้าใน Database ยังไม่มีฟิลด์ price ระบบจะแสดง $299 เป็นค่าเริ่มต้น */}
               <Text style={styles.productPrice}>{product.price || '$299'}</Text>
             </TouchableOpacity>
           ))
