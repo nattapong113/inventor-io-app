@@ -20,13 +20,14 @@ import BottomNav from '../components/BottomNav';
 export default function AddProductScreen() {
   const router = useRouter();
   
-  // State สำหรับเก็บข้อมูลฟอร์ม
+  // State สำหรับเก็บข้อมูลฟอร์ม (เพิ่ม imageUrl เข้ามาด้วย)
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [itemCode, setItemCode] = useState('');
   const [stock, setStock] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // URL ของ API เซิร์ฟเวอร์มหาลัย
@@ -51,12 +52,13 @@ export default function AddProductScreen() {
         body: JSON.stringify({
           name: name,
           stock: parseInt(stock),
-          category: 1, // ค่าจำลอง (ถ้าจะใช้จริงต้องผูกกับ ID หมวดหมู่)
+          category: parseInt(category) || 1, 
           location: 'Main Warehouse',
-          image: 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=200&h=200&fit=crop', // รูปภาพเริ่มต้น
-          status: parseInt(stock) > 5 ? 'Active' : 'Low in stock', // คำนวณสถานะจากสต็อก
+          // ถ้าใส่ลิงก์รูปมาจะใช้ลิงก์นั้น ถ้าไม่ใส่จะใช้รูปเริ่มต้น
+          image: imageUrl || 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&h=500&fit=crop', 
+          status: parseInt(stock) > 5 ? 'Active' : 'Low in stock', 
           brand: 'Generic', 
-          sizes: description, // นำ Description ไปใส่ช่อง sizes ก่อน
+          sizes: description, 
           productCode: itemCode,
           orderName: `Order-${itemCode}`
         }),
@@ -84,7 +86,6 @@ export default function AddProductScreen() {
 
       {/* Modern Header */}
       <View style={styles.header}>
-        {/* ปุ่ม Back พุ่งกลับไปหน้า Home */}
         <TouchableOpacity onPress={() => router.replace('/home')} style={styles.iconButton}>
           <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
@@ -103,14 +104,25 @@ export default function AddProductScreen() {
           <View style={styles.formCard}>
             <Text style={styles.sectionTitle}>Product Details</Text>
 
-            {/* Name */}
+            {/* Product Name */}
             <Text style={styles.label}>Product Name <Text style={styles.required}>*</Text></Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g., Dell UltraSharp 27"
+              placeholder="e.g., ASUS ROG Strix XG27AQ"
               placeholderTextColor="#94A3B8"
               value={name}
               onChangeText={setName}
+            />
+
+            {/* Image URL (ช่องใหม่สำหรับใส่ลิงก์รูปภาพ) */}
+            <Text style={styles.label}>Image URL (Optional)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="https://example.com/image.jpg"
+              placeholderTextColor="#94A3B8"
+              value={imageUrl}
+              onChangeText={setImageUrl}
+              autoCapitalize="none"
             />
 
             {/* Description */}
@@ -131,8 +143,9 @@ export default function AddProductScreen() {
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.inputNoMargin}
-                placeholder="Select category"
+                placeholder="Select category (e.g., 1)"
                 placeholderTextColor="#94A3B8"
+                keyboardType="number-pad"
                 value={category}
                 onChangeText={setCategory}
               />
@@ -169,14 +182,14 @@ export default function AddProductScreen() {
             <Text style={styles.label}>Item Code <Text style={styles.required}>*</Text></Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g., JD-001"
+              placeholder="e.g., ASUS-XG27AQ"
               placeholderTextColor="#94A3B8"
               value={itemCode}
               onChangeText={setItemCode}
             />
           </View>
 
-          {/* Save Button ที่เชื่อมต่อ API */}
+          {/* Save Button */}
           <TouchableOpacity 
             style={[styles.saveButton, isSubmitting && { opacity: 0.7 }]}
             onPress={handleSaveProduct}

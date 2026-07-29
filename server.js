@@ -9,7 +9,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 
-// 1. สร้างการเชื่อมต่อกับ MySQL (ใช้โค้ดตัวเต็ม ไม่ใช่จุดสามจุดแล้วครับ)
+// 1. สร้างการเชื่อมต่อกับ MySQL
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -33,24 +33,36 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// 3. API สำหรับเพิ่มสินค้าใหม่ (POST)
+// 3. API สำหรับเพิ่มสินค้าใหม่ (POST) - รองรับทุกคอลัมน์ครบถ้วน
+// API สำหรับเพิ่มสินค้าใหม่ (POST) - ป้องกัน Error 500 ด้วยการบันทึกเฉพาะฟิลด์หลัก
 app.post('/api/products', async (req, res) => {
     try {
         const { name, stock, category, location, image, status } = req.body;
+
         const sql = `
             INSERT INTO Inventory 
             (name, stock, category, location, image, status, lastUpdate) 
             VALUES (?, ?, ?, ?, ?, ?, NOW())
         `;
-        const values = [name, stock, category, location, image, status];
+        
+        const values = [
+            name, 
+            stock, 
+            category || 1, 
+            location || 'Main Warehouse', 
+            image || 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&h=500&fit=crop', 
+            status || 'Active'
+        ];
+
         const [result] = await pool.query(sql, values);
+        
         res.status(201).json({ 
             message: 'เพิ่มสินค้าสำเร็จเรียบร้อย', 
             insertId: result.insertId 
         });
     } catch (err) {
         console.error('Insert Product Error:', err.message);
-        res.status(500).json({ error: 'ไม่สามารถเพิ่มสินค้าได้' });
+        res.status(500).json({ error: err.message });
     }
 });
 
