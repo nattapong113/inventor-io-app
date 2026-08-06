@@ -68,9 +68,8 @@ export default function AddProductScreen() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      Alert.alert('สำเร็จ', 'เพิ่มสินค้าใหม่เรียบร้อยแล้ว!', [
-        { text: 'OK', onPress: () => router.replace('/products') }
-      ]);
+      Alert.alert('สำเร็จ', 'เพิ่มสินค้าใหม่เรียบร้อยแล้ว!');
+      router.replace('/products');
 
     } catch (error: any) {
       console.error("Error adding product:", error);

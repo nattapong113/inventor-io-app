@@ -37,21 +37,26 @@ app.get('/api/products', async (req, res) => {
 // API สำหรับเพิ่มสินค้าใหม่ (POST) - ป้องกัน Error 500 ด้วยการบันทึกเฉพาะฟิลด์หลัก
 app.post('/api/products', async (req, res) => {
     try {
-        const { name, stock, category, location, image, status } = req.body;
+        const { name, stock, category, location, image, status, price, brand, sizes, productCode, orderName } = req.body;
 
         const sql = `
-            INSERT INTO Inventory 
-            (name, stock, category, location, image, status, lastUpdate) 
-            VALUES (?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO Inventory
+            (name, stock, category, location, image, status, price, brand, sizes, productCode, orderName, lastUpdate)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         `;
-        
+
         const values = [
-            name, 
-            stock, 
-            category || 1, 
-            location || 'Main Warehouse', 
-            image || 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&h=500&fit=crop', 
-            status || 'Active'
+            name,
+            stock,
+            category || 1,
+            location || 'Main Warehouse',
+            image || 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&h=500&fit=crop',
+            status || 'Active',
+            price || null,
+            brand || null,
+            sizes || null,
+            productCode || null,
+            orderName || null
         ];
 
         const [result] = await pool.query(sql, values);
@@ -62,6 +67,60 @@ app.post('/api/products', async (req, res) => {
         });
     } catch (err) {
         console.error('Insert Product Error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3.1 API สำหรับดึงข้อมูลสินค้าชิ้นเดียว (GET by id) - ใช้เปิดหน้าแก้ไข
+app.get('/api/products/:id', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM Inventory WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('Get Product Error:', err.message);
+        res.status(500).json({ error: 'Failed to fetch product' });
+    }
+});
+
+// 3.2 API สำหรับแก้ไขข้อมูลสินค้า (PUT)
+app.put('/api/products/:id', async (req, res) => {
+    try {
+        const { name, stock, category, location, image, status, price, brand, sizes, productCode, orderName } = req.body;
+
+        const sql = `
+            UPDATE Inventory
+            SET name = ?, stock = ?, category = ?, location = ?, image = ?, status = ?,
+                price = ?, brand = ?, sizes = ?, productCode = ?, orderName = ?, lastUpdate = NOW()
+            WHERE id = ?
+        `;
+
+        const values = [
+            name,
+            stock,
+            category || 1,
+            location || 'Main Warehouse',
+            image || 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&h=500&fit=crop',
+            status || 'Active',
+            price || null,
+            brand || null,
+            sizes || null,
+            productCode || null,
+            orderName || null,
+            req.params.id
+        ];
+
+        const [result] = await pool.query(sql, values);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        res.json({ message: 'แก้ไขสินค้าสำเร็จเรียบร้อย' });
+    } catch (err) {
+        console.error('Update Product Error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });

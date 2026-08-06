@@ -77,7 +77,10 @@ export default function ProductsScreen() {
               <View style={styles.statusBadge}>
                 <Text style={styles.statusBadgeText}>{item.status || 'Active'}</Text>
               </View>
-              <TouchableOpacity style={styles.arrowButton}>
+              <TouchableOpacity
+                style={styles.arrowButton}
+                onPress={() => router.push({ pathname: '/edit', params: { id: item.id } })}
+              >
                 <Ionicons name="chevron-forward" size={16} color="#2563EB" />
               </TouchableOpacity>
             </View>
